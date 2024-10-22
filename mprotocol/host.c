@@ -46,30 +46,46 @@ void free_field(Field *field) {
     }
 }
 
-void parse_packet(int fd, FieldHandler handler) {
+// verified
+int parse_packet(int fd, FieldHandler handler) {
     uint32_t packet_id;
     uint8_t packet_type;
     uint16_t field_count;
+
+    // Read start of packet character
+    char sop;
+    if (read(fd, &sop, 1) != 1) {
+        perror("Failed to read start of packet character");
+        close(fd);
+        return -1;
+    }
+
+    // Check if start of packet character is valid
+    if (sop != SOP) {
+        fprintf(stderr, "Invalid start of packet character\n");
+        close(fd);
+        return -1;
+    }
 
     // Read packet ID
     if (read(fd, &packet_id, sizeof(packet_id)) != sizeof(packet_id)) {
         perror("Failed to read packet ID");
         close(fd);
-        return;
+        return -1;
     }
 
     // Read packet type
     if (read(fd, &packet_type, sizeof(packet_type)) != sizeof(packet_type)) {
         perror("Failed to read packet type");
         close(fd);
-        return;
+        return -1;
     }
 
     // Read field count
     if (read(fd, &field_count, sizeof(field_count)) != sizeof(field_count)) {
         perror("Failed to read field count");
         close(fd);
-        return;
+        return -1;
     }
 
     // Read each field
@@ -80,7 +96,7 @@ void parse_packet(int fd, FieldHandler handler) {
             perror("Failed to read field type");
             free(field);
             close(fd);
-            return;
+            return -1;
         }
 
         int field_size = get_field_size(field->type);
@@ -88,7 +104,7 @@ void parse_packet(int fd, FieldHandler handler) {
             perror("Invalid field type");
             free(field);
             close(fd);
-            return;
+            return -1;
         }
 
         uint8_t raw_data[field_size];
@@ -96,7 +112,7 @@ void parse_packet(int fd, FieldHandler handler) {
             perror("Failed to read field data");
             free(field);
             close(fd);
-            return;
+            return -1;
         }
         field->data = raw_data;
 
@@ -110,9 +126,26 @@ void parse_packet(int fd, FieldHandler handler) {
         free(field);
     }
 
+    // Read end of packet character
+    char eop;
+    if (read(fd, &eop, 1) != 1) {
+        perror("Failed to read end of packet character");
+        close(fd);
+        return -1;
+    }
+
+    // Check if end of packet character is valid
+    if (eop != EOP) {
+        fprintf(stderr, "Invalid end of packet character\n");
+        close(fd);
+        return -1;
+    }
+
     close(fd);
+    return 0;
 }
 
+// verified
 void write_packet(Packet *packet, int fd) {
     // Write the packet header
     char sop = SOP;

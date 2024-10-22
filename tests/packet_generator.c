@@ -26,7 +26,8 @@ void generate_packet() {
     fflush(stdout);
 }
 
-int main(int argc, char *argv[]) {
+//int main(int argc, char *argv[]) {
+int main() {
     // if (argc != 2) {
     //     fprintf(stderr, "Usage: %s <input>\n", argv[0]);
     //     return EXIT_FAILURE;

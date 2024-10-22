@@ -7,8 +7,8 @@ int get_field_size(uint8_t type) {
     switch (type) {
         case FIELD_TYPE_HELLO:
             return FIELD_SIZE_HELLO;
-        case FIELD_TYPE_DATA_8:
-            return FIELD_SIZE_DATA_8;
+        case FIELD_TYPE_DATA_1:
+            return FIELD_SIZE_DATA_1;
         case FIELD_TYPE_GOODBYE:
             return FIELD_SIZE_GOODBYE;
         default:
@@ -22,9 +22,9 @@ int handle_field(int packet_id, Field *field) {
         case FIELD_TYPE_HELLO:
             printf("ID: %d, Hello: %02X %02X %02X\n", packet_id, field->data[0], field->data[1], field->data[2]);
             break;
-        case FIELD_TYPE_DATA_8:
-            printf("Data 8: ");
-            for (int i = 0; i < FIELD_SIZE_DATA_8; i++) {
+        case FIELD_TYPE_DATA_1:
+            printf("Data 1: ");
+            for (int i = 0; i < FIELD_SIZE_DATA_1; i++) {
                 printf("%02X ", field->data[i]);
             }
             printf("\n");

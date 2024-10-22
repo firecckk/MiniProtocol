@@ -13,7 +13,7 @@ void free_field(Field *field);
 
 // call back function to handle different field types
 typedef int (*FieldHandler)(int packet_id ,Field *field);
-void parse_packet(int fd, FieldHandler handler);
+int parse_packet(int fd, FieldHandler handler);
 
 void write_packet(Packet *packet, int fd);
 
