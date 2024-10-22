@@ -24,16 +24,16 @@ INC = $(ROOT)/mprotocol/user_fields.c $(ROOT)/mprotocol/host.c
 SRC = $(TARGET).c $(INC)
 
 # Build target
+all: $(BIN_DIR)/$(TARGET)
+	@echo "Build All complete"
+
 tests:
 	@echo "Building test suits"
-	mkdir -p $(BIN_DIR)
+	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $(BIN_DIR)/packet_generator packet_generator.c $(INC)
 
-all: $(BIN_DIR)/$(TARGET)
-	@echo "Build complete"
-
 $(BIN_DIR)/$(TARGET): $(SRC) $(HEADERS)
-	mkdir -p $(BIN_DIR)
+	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $(BIN_DIR)/$(TARGET) $(SRC)
 
 # Run target

@@ -114,6 +114,14 @@ void parse_packet(int fd, FieldHandler handler) {
 }
 
 void write_packet(Packet *packet, int fd) {
+    // Write the packet header
+    char sop = SOP;
+    if (write(fd, &sop, 1) == -1) {
+        perror("Failed to write packet header");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+
     // Write the packet ID
     if (write(fd, &packet->id, sizeof(packet->id)) == -1) {
         perror("Failed to write packet ID");
@@ -138,14 +146,14 @@ void write_packet(Packet *packet, int fd) {
     // Write each field
     for (int i = 0; i < packet->field_count; i++) {
         // Write the field type
-        if (write(fd, &packet->fields[i]->type, sizeof(packet->fields[i]->type)) == -1) {
+        if (write(fd, &packet->fields[i]->type, sizeof(uint8_t)) == -1) {
             perror("Failed to write field type");
             close(fd);
             exit(EXIT_FAILURE);
         }
 
         // Write the field data
-        if (write(fd, packet->fields[i]->data, FIELD_SIZE_HELLO) == -1) {
+        if (write(fd, packet->fields[i]->data, get_field_size(packet->fields[i]->type)) == -1) {
             perror("Failed to write field data");
             close(fd);
             exit(EXIT_FAILURE);
@@ -154,7 +162,7 @@ void write_packet(Packet *packet, int fd) {
 
     // Write the end of packet character
     char eop = EOP;
-    if (write(fd, &eop, sizeof(EOP)) == -1) {
+    if (write(fd, &eop, 1) == -1) {
         perror("Failed to write EOP");
         close(fd);
         exit(EXIT_FAILURE);
