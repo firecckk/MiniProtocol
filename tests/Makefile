@@ -32,6 +32,8 @@ tests:
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $(BIN_DIR)/packet_generator packet_generator.c $(INC)
 	$(CC) $(CFLAGS) -o $(BIN_DIR)/packet_parser packet_parser.c $(INC)
+	$(CC) $(CFLAGS) -o $(BIN_DIR)/serial_test serial_test.c $(INC)
+	$(CC) $(CFLAGS) -o $(BIN_DIR)/serial_loop_test serial_loop_test.c $(INC)
 
 $(BIN_DIR)/$(TARGET): $(SRC) $(HEADERS)
 	@mkdir -p $(BIN_DIR)

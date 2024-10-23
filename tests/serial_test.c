@@ -6,10 +6,9 @@
 #include <errno.h>
 #include <termios.h>
 
-#include "mprotocol.h"
-
 int open_serial_port(const char *device) {
     int fd = open(device, O_RDWR | O_NOCTTY | O_NDELAY);
+    fprintf(stderr, "open_serial_port: Opening serial port\n");
     if (fd == -1) {
         perror("open_serial_port: Unable to open port");
         return -1;
@@ -17,52 +16,54 @@ int open_serial_port(const char *device) {
 
     struct termios options;
     tcgetattr(fd, &options);
-
-    cfsetispeed(&options, B9600);
-    cfsetospeed(&options, B9600);
-
+    cfsetispeed(&options, B115200);
+    cfsetospeed(&options, B115200);
     options.c_cflag |= (CLOCAL | CREAD);
     options.c_cflag &= ~PARENB;
     options.c_cflag &= ~CSTOPB;
     options.c_cflag &= ~CSIZE;
     options.c_cflag |= CS8;
-
     tcsetattr(fd, TCSANOW, &options);
 
     return fd;
 }
 
-Packet * generate_packet() {
-    // create a packet
-    u_int8_t field_data[FIELD_SIZE_HELLO] = {0x01, 0x02, 0x03};
-    Field *field = create_field(FIELD_TYPE_HELLO, field_data);
-
-    u_int8_t field_data2[FIELD_SIZE_GOODBYE] = {0x04};
-    Field *field2 = create_field(FIELD_TYPE_GOODBYE, field_data2);
-
-    Field fields[] = {*field, *field2};
-    Packet *packet = create_packet(111, 0, 2, fields);
-
-    print_packet(packet);
-
-    return packet;
+ssize_t read_from_serial_port(int fd, void *buffer, size_t size) {
+    ssize_t bytes_read = read(fd, buffer, size);
+    //if (bytes_read == -1) {
+    //    perror("read_from_serial_port: Unable to read from port");
+    //}
+    return bytes_read;
 }
 
 int main() {
-    const char *device = "/dev/ttyS0"; // Change this to your serial port
+    const char *device = "/dev/tty.usbmodem14201"; // Change this to your serial port device
     int fd = open_serial_port(device);
     if (fd == -1) {
-        perror("Failed to open serial port");
-        return 1;
+        return EXIT_FAILURE;
     }
 
-    Packet *packet = generate_packet();
-    if (packet == NULL) {
+    const char *message = "A"; // Character to send
+    ssize_t bytes_written = write(fd, message, strlen(message));
+    if (bytes_written == -1) {
+        perror("main: Unable to write to port");
         close(fd);
-        return 1;
+        return EXIT_FAILURE;
     }
 
-    free_packet(packet);
+    char buffer[256];
+    while (1) {
+    write(fd, message, strlen(message));
+    ssize_t bytes_read = read_from_serial_port(fd, buffer, sizeof(buffer) - 1);
+    if (bytes_read > 0) {
+        buffer[bytes_read] = '\0';
+        printf("Read %zd bytes: %s\n", bytes_read, buffer);
+    } else if (bytes_read == -1) {
+        continue;
+    }
+    usleep(100000); // Sleep for 100ms to avoid busy-waiting
+}
+
     close(fd);
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -4,14 +4,13 @@
 
 #include "mprotocol.h"
 
-void read_packet(int fd, Packet * packet) {
+void read_packet(int fd) {
     parse_packet(fd, handle_field);
 }
 
 int main() {
-
-    Packet packet;
-    read_packet(STDIN_FILENO, &packet);
+    
+    read_packet(STDIN_FILENO);
     
     return EXIT_SUCCESS;
 }

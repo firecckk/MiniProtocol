@@ -16,7 +16,7 @@
 
 #elif defined(__APPLE__) && defined(__MACH__)
     #define PLATFORM_MAC
-    #define MAX_FIELDS_COUNT 100
+    //#define MAX_FIELDS_COUNT 100
 
 #elif defined(STM32F4xx) || defined(STM32F7xx) || defined(STM32H7xx)
     #define PLATFORM_STM32
