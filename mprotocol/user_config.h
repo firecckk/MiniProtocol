@@ -4,6 +4,8 @@
 // Define a flag to indicate whether the protocol is on host or user side.
 #define IS_HOST
 
+#define PACKET_LENGTH_SIZE 4096
+
 #ifdef IS_HOST
 // Define the platform
 #if defined(_WIN32) || defined(_WIN64)

@@ -6,9 +6,6 @@
  * @brief This file contains definitions and structures for the communication protocol.
  */
 
-#define SOP 0x2A  // Start of Packet
-#define EOP '\n'  // End of Packet
-
 #include "packet.h"
 
 #include "user_config.h"

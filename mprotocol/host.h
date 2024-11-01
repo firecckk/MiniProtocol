@@ -19,4 +19,17 @@ void write_packet(Packet *packet, int fd);
 
 void print_packet(Packet *packet);
 
+enum _States {
+    WAIT_SOP,
+    WAIT_ID,
+    WAIT_TYPE,
+    WAIT_COUNT,
+    WAIT_FIELD_TYPE,
+    WAIT_FIELD_DATA,
+    WAIT_EOP,
+    COMPLETE
+};
+
+int field_count;
+
 #endif // HOST_H

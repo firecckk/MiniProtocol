@@ -5,7 +5,7 @@
 #include "mprotocol.h"
 
 void read_packet(int fd) {
-    parse_packet(fd, handle_field);
+    while(parse_packet(fd, handle_field)!=0);
 }
 
 int main() {

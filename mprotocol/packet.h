@@ -5,42 +5,29 @@
 #include <stdlib.h>
 #include <string.h>
 
-/**
- * @struct Field
- * @brief Represents a field in a packet.
- * 
- * @var Field::type
- * Type of the field.
- * 
- * @var Field::data
- * Pointer to the data of the field.
- * 
- * @var Field::length
- * Length of the data.
- */
+
+#define SOP 0x2A  // Start of Packet
+#define EOP '\n'  // End of Packet
+
+#define TYPE_SOP uint8_t
+#define TYPE_PACKET_ID uint32_t
+#define TYPE_PACKET_TYPE uint8_t
+#define TYPE_PACKET_FIELD_COUNT uint16_t
+#define TYPE_FIELD_TYPE uint8_t
+#define TYPE_PACKET_EOP uint8_t
+
 typedef struct {
-    uint8_t type;
-    uint8_t *data;
+    TYPE_FIELD_TYPE type;
+    uint8_t *data; // data can be of any type
 } Field;
 
-/**
- * @struct Packet
- * @brief Represents a packet in the communication protocol.
- * 
- * @var Packet::id
- * ID of the packet.
- * 
- * @var Packet::fields
- * Pointer to an array of fields in the packet.
- * 
- * @var Packet::field_count
- * Number of fields in the packet.
- */
 typedef struct {
-    uint32_t id;    // Packet ID
-    uint8_t type;   // Packet type
-    uint16_t field_count; // Number of fields
+    TYPE_SOP sop;   // Start of packet
+    TYPE_PACKET_ID id;    // Packet ID
+    TYPE_PACKET_TYPE type;   // Packet type
+    TYPE_PACKET_FIELD_COUNT field_count; // Number of fields
     Field **fields; // Packet body (multiple different type of fields)
+    TYPE_PACKET_EOP eop;   // End of packet
 } Packet;
 
 #endif // PACKET_H
