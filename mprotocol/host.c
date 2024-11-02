@@ -90,7 +90,11 @@ int _cached_read(int fd, void *buf, size_t count)
             int return_value = _bytes_read;
             _bytes_read = 0;
             _last_count = 0;
-            fprintf(stderr, "Read %d/%d bytes: %d\n", return_value, count, buf);
+            //fprintf(stderr, "Read %d/%zu bytes: ", return_value, count);
+            //for (size_t i = 0; i < count; i++) {
+            //    fprintf(stderr, "%02X ", ((unsigned char*)buf)[i]);
+            //}
+            //fprintf(stderr, "\n");
             return return_value;
         } else if(_bytes_read > count)
         {
@@ -153,7 +157,7 @@ int parse_packet(int fd, FieldHandler handler)
         if (_cached_read(fd, &(_field->type), sizeof(TYPE_FIELD_TYPE)) == sizeof(TYPE_FIELD_TYPE))
         {
             _state = WAIT_FIELD_DATA;
-            fprintf(stderr, "Field type: %d\n", _field->type);
+            fprintf(stderr, "Field type: %d, with size: %u\n", _field->type, get_field_size(_field->type));
             _field->data = (uint8_t *)malloc(get_field_size(_field->type));
             if (_field->data == NULL)
             {
@@ -165,9 +169,8 @@ int parse_packet(int fd, FieldHandler handler)
         }
         __attribute__((fallthrough));
     case WAIT_FIELD_DATA:
-        if (_cached_read(fd, _field->data, get_field_size(_field->type) == get_field_size(_field->type)))
+        if (_cached_read(fd, _field->data, get_field_size(_field->type)) == get_field_size(_field->type))
         {
-            _state = WAIT_EOP;
             handler((&_packet)->id, _field);
             free(_field->data);
             free(_field);
@@ -178,6 +181,7 @@ int parse_packet(int fd, FieldHandler handler)
                 _state = WAIT_EOP;
             } else {
                 _state = WAIT_FIELD_TYPE;
+                break;
             }
         } else {
             return -1;

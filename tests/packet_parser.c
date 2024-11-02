@@ -5,7 +5,6 @@
 #include "mprotocol.h"
 
 int handler(int packet_id, Field *field) {
-    printf("Handling packet\n");
     switch (field->type) {
         case FIELD_TYPE_HELLO:
             printf("ID: %d, Hello: %02X %02X %02X\n", packet_id, field->data[0], field->data[1], field->data[2]);
