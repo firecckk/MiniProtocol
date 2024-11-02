@@ -11,8 +11,15 @@ Field * create_field(uint8_t type, uint8_t *data);
 
 void free_field(Field *field);
 
+// call this function before calling parse_packet
+// to reset the state
+void parse_next();
+
 // call back function to handle different field types
 typedef int (*FieldHandler)(int packet_id ,Field *field);
+// parse_packet is a non-blocking function
+// it will return 0 if the packet is complete
+// call parse_next() before parsing next packet
 int parse_packet(int fd, FieldHandler handler);
 
 void write_packet(Packet *packet, int fd);

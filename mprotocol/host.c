@@ -72,14 +72,13 @@ int _cached_read(int fd, void *buf, size_t count)
         int result = read(fd, buf + _bytes_read, count - _bytes_read);
         if (result == -1)
         {
-            fprintf(stderr, "Failed to read from file descriptor: %s\n", (char *) buf);
-            perror("Failed to read from file descriptor");
+            //perror("Failed to read from file descriptor");
             return -1;
         }
         else if (result == 0)
         {
             fprintf(stderr, "Zero readings\n");
-            return -1;
+            return -2;
         }
         _bytes_read += result;
         _last_count = count;
@@ -114,64 +113,86 @@ int _handled_field_count=0;
 Field * _field;
 
 // if complete a packet, return 0
+// if failed to read, return -1
+// if failed to handle the field, return -2
 int parse_packet(int fd, FieldHandler handler)
 {
+    int read_len = 0;
+    int total_read_len = 0;
     switch (_state)
     {
     case WAIT_SOP:
-        if (_cached_read(fd, &_packet.sop, sizeof(TYPE_SOP)) == sizeof(TYPE_SOP) && _packet.sop== SOP)
+        read_len = _cached_read(fd, &_packet.sop, sizeof(TYPE_SOP));
+        if ( read_len == sizeof(TYPE_SOP) && _packet.sop== SOP)
         {
+            total_read_len += read_len;
             _state = WAIT_ID;
         } else {
-            fprintf(stderr, "Failed to read SOP, read: %c\n", (&_packet)->sop);
-            return -1;
+            //fprintf(stderr, "Failed to read SOP, read: %02X\n", (&_packet)->sop);
+            return(total_read_len == 0 ? read_len : total_read_len);
         }
         __attribute__((fallthrough));
     case WAIT_ID:
-        if (_cached_read(fd, &((&_packet)->id), sizeof(TYPE_PACKET_ID)) == sizeof(TYPE_PACKET_ID))
+        read_len = _cached_read(fd, &((&_packet)->id), sizeof(TYPE_PACKET_ID));
+        if ( read_len == sizeof(TYPE_PACKET_ID))
         {
+            total_read_len += read_len;
             _state = WAIT_TYPE;
         } else {
-            return -1; // !!! TODO: Implement error handling. e.g. return -1 if failed to read
-                        // e.g. return -2 if read not complete
+            return(total_read_len == 0 ? read_len : total_read_len);
         }
         __attribute__((fallthrough));
     case WAIT_TYPE:
-        if (_cached_read(fd, &((&_packet)->type), sizeof(TYPE_PACKET_TYPE)) == sizeof(TYPE_PACKET_TYPE))
+        read_len = _cached_read(fd, &((&_packet)->type), sizeof(TYPE_PACKET_TYPE));
+        if ( read_len == sizeof(TYPE_PACKET_TYPE))
         {
+            total_read_len += read_len;
             _state = WAIT_COUNT;
         } else {
-            return -1;
+            return(total_read_len == 0 ? read_len : total_read_len);
         }
         __attribute__((fallthrough));
     case WAIT_COUNT:
-        if (_cached_read(fd, &((&_packet)->field_count), sizeof(TYPE_PACKET_FIELD_COUNT)) == sizeof(TYPE_PACKET_FIELD_COUNT))
+        read_len = _cached_read(fd, &((&_packet)->field_count), sizeof(TYPE_PACKET_FIELD_COUNT));
+        if ( read_len == sizeof(TYPE_PACKET_FIELD_COUNT))
         {
+            total_read_len += read_len;
             _state = WAIT_FIELD_TYPE;
         } else {
-            return -1;
+            return(total_read_len == 0 ? read_len : total_read_len);
         }
         __attribute__((fallthrough));
     case WAIT_FIELD_TYPE:
         _field = (Field *)malloc(sizeof(Field));
-        if (_cached_read(fd, &(_field->type), sizeof(TYPE_FIELD_TYPE)) == sizeof(TYPE_FIELD_TYPE))
+        read_len = _cached_read(fd, &(_field->type), sizeof(TYPE_FIELD_TYPE));
+        if (read_len == sizeof(TYPE_FIELD_TYPE))
         {
+            total_read_len += read_len;
             _state = WAIT_FIELD_DATA;
-            fprintf(stderr, "Field type: %d, with size: %u\n", _field->type, get_field_size(_field->type));
+            //fprintf(stderr, "Field type: %d, with size: %u\n", _field->type, get_field_size(_field->type));
             _field->data = (uint8_t *)malloc(get_field_size(_field->type));
             if (_field->data == NULL)
             {
                 fprintf(stderr, "Failed to allocate memory for field data\n");
-                return -1;
+                return -2;
             }
         } else {
-            return -1;
+            free(_field);
+            return(total_read_len == 0 ? read_len : total_read_len);
         }
         __attribute__((fallthrough));
     case WAIT_FIELD_DATA:
-        if (_cached_read(fd, _field->data, get_field_size(_field->type)) == get_field_size(_field->type))
+        read_len = _cached_read(fd, _field->data, get_field_size(_field->type));
+        if ( read_len == get_field_size(_field->type))
         {
-            handler((&_packet)->id, _field);
+            total_read_len += read_len;
+            if(handler((&_packet)->id, _field) < 0)
+            {
+                // failed to handle the field
+                free(_field->data);
+                free(_field);
+                return -2;
+            }
             free(_field->data);
             free(_field);
             _handled_field_count++;
@@ -181,28 +202,35 @@ int parse_packet(int fd, FieldHandler handler)
                 _state = WAIT_EOP;
             } else {
                 _state = WAIT_FIELD_TYPE;
-                break;
+                return(total_read_len == 0 ? read_len : total_read_len);
             }
         } else {
-            return -1;
+            return(total_read_len == 0 ? read_len : total_read_len);
         }
         __attribute__((fallthrough));
     case WAIT_EOP:
-        if (_cached_read(fd, &((&_packet)->eop), sizeof(TYPE_PACKET_EOP)) == sizeof(TYPE_PACKET_EOP) && (&_packet)->eop == EOP)
+        read_len = _cached_read(fd, &((&_packet)->eop), sizeof(TYPE_PACKET_EOP));
+        if ( read_len == sizeof(TYPE_PACKET_EOP) && (&_packet)->eop == EOP)
         {
+            total_read_len += read_len;
             _state = COMPLETE;
-            return 1;
+            return(total_read_len == 0 ? read_len : total_read_len);
         } else {
-            return -1;
+            fprintf(stderr, "Failed to read EOP, read: %02X\n", (&_packet)->eop);
+            return(total_read_len == 0 ? read_len : total_read_len);
         }
         __attribute__((fallthrough));
     case COMPLETE:
-        // reset states
-        _state = WAIT_SOP;
-        _handled_field_count = 0;
+        // call parse_next() to reset the state
         return 0;
     }
-    return 1;
+    //return -1;
+}
+
+void parse_next()
+{
+    _state = WAIT_SOP;
+    _handled_field_count = 0;
 }
 
 // verified
