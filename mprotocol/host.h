@@ -3,7 +3,7 @@
 
 #include "mprotocol.h"
 
-Packet * create_packet(uint32_t id, uint8_t type, uint16_t field_count, Field **fields);
+int create_packet(Packet * packet, uint32_t id, uint8_t type, uint16_t field_count, Field **fields);
 
 void free_packet(Packet *packet);
 

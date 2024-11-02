@@ -4,20 +4,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-Packet *create_packet(uint32_t id, uint8_t type, uint16_t field_count, Field **fields)
+int create_packet(Packet * packet, uint32_t id, uint8_t type, uint16_t field_count, Field **fields)
 {
-    Packet *packet = (Packet *)malloc(sizeof(Packet));
-    if (packet == NULL)
-    {
-        // Handle memory allocation failure
-        fprintf(stderr, "Failed to allocate memory for packet\n");
-        // exit(EXIT_FAILURE);
-    }
     packet->id = id;
     packet->type = type;
     packet->field_count = field_count;
     packet->fields = fields;
-    return packet;
+    return 0;
 }
 
 void free_packet(Packet *packet)
@@ -97,7 +90,13 @@ int _cached_read(int fd, void *buf, size_t count)
             int return_value = _bytes_read;
             _bytes_read = 0;
             _last_count = 0;
+            fprintf(stderr, "Read %d/%d bytes: %d\n", return_value, count, buf);
             return return_value;
+        } else if(_bytes_read > count)
+        {
+            // read more than expected
+            perror("Read more bytes than expected");
+            return -1;
         }
     } 
     // not enough bytes read, wait for next read
@@ -108,7 +107,7 @@ int _cached_read(int fd, void *buf, size_t count)
 enum _States _state = WAIT_SOP;
 Packet _packet;
 int _handled_field_count=0;
-Field _field;
+Field * _field;
 
 // if complete a packet, return 0
 int parse_packet(int fd, FieldHandler handler)
@@ -116,7 +115,7 @@ int parse_packet(int fd, FieldHandler handler)
     switch (_state)
     {
     case WAIT_SOP:
-        if (_cached_read(fd, &((&_packet)->sop), sizeof(TYPE_SOP)) == sizeof(TYPE_SOP) && (&_packet)->sop == SOP)
+        if (_cached_read(fd, &_packet.sop, sizeof(TYPE_SOP)) == sizeof(TYPE_SOP) && _packet.sop== SOP)
         {
             _state = WAIT_ID;
         } else {
@@ -146,22 +145,36 @@ int parse_packet(int fd, FieldHandler handler)
             return -1;
         }
     case WAIT_FIELD_TYPE:
-        if (_cached_read(fd, &((&_field)->type), sizeof(TYPE_FIELD_TYPE)) == sizeof(TYPE_FIELD_TYPE))
+        _field = (Field *)malloc(sizeof(Field));
+        if (_cached_read(fd, &(_field->type), sizeof(TYPE_FIELD_TYPE)) == sizeof(TYPE_FIELD_TYPE))
         {
             _state = WAIT_FIELD_DATA;
+            fprintf(stderr, "Field type: %d\n", _field->type);
+            _field->data = (uint8_t *)malloc(get_field_size(_field->type));
+            if (_field->data == NULL)
+            {
+                fprintf(stderr, "Failed to allocate memory for field data\n");
+                return -1;
+            }
         } else {
             return -1;
         }
     case WAIT_FIELD_DATA:
-        if (_cached_read(fd, &((&_field)->data), get_field_size((&_field)->type)) == get_field_size((&_field)->type))
+        if (_cached_read(fd, _field->data, get_field_size(_field->type) == get_field_size(_field->type)))
         {
+            fprintf(stderr, "Field_size %u, Field data: %d %d %d\n", get_field_size(_field->type), (_field->data[0]), (_field->data[1]), (_field->data[2]));
+            fflush(stderr);
             _state = WAIT_EOP;
-            handler((&_packet)->id, &_field);
+            handler((&_packet)->id, _field);
+            free(_field->data);
+            free(_field);
             _handled_field_count++;
             if(((&_packet)->field_count) == _handled_field_count)
             {
                 // all fields are handled
                 _state = WAIT_EOP;
+            } else {
+                _state = WAIT_FIELD_TYPE;
             }
         } else {
             return -1;
@@ -180,7 +193,6 @@ int parse_packet(int fd, FieldHandler handler)
         _handled_field_count = 0;
         return 0;
     }
-
     return 1;
 }
 

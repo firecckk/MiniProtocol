@@ -18,10 +18,12 @@ void generate_packet() {
     field2.data = field_data2;
 
     Field *fields[] = {&field, &field2};
-    Packet *packet = create_packet(1, 2, 2, fields);
 
-    //print_packet(packet);
-    write_packet(packet, STDOUT_FILENO);
+    Packet packet;
+    create_packet(&packet, 1, 2, 2, fields);
+
+    //print_packet(&packet);
+    write_packet(&packet, STDOUT_FILENO);
      
     fflush(stdout);
 }

@@ -51,10 +51,11 @@ void generate_packet(int fd) {
     field2.data = field_data2;
 
     Field *fields[] = {&field, &field2};
-    Packet *packet = create_packet(1, 2, 2, fields);
+    Packet packet;
+    create_packet(&packet, 1, 2, 2, fields);
 
     //print_packet(packet);
-    write_packet(packet, fd);
+    write_packet(&packet, fd);
 }
 
 int main() {
