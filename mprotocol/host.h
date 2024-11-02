@@ -30,6 +30,4 @@ enum _States {
     COMPLETE
 };
 
-int field_count;
-
 #endif // HOST_H

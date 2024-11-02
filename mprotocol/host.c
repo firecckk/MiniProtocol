@@ -122,6 +122,7 @@ int parse_packet(int fd, FieldHandler handler)
             fprintf(stderr, "Failed to read SOP, read: %c\n", (&_packet)->sop);
             return -1;
         }
+        __attribute__((fallthrough));
     case WAIT_ID:
         if (_cached_read(fd, &((&_packet)->id), sizeof(TYPE_PACKET_ID)) == sizeof(TYPE_PACKET_ID))
         {
@@ -130,6 +131,7 @@ int parse_packet(int fd, FieldHandler handler)
             return -1; // !!! TODO: Implement error handling. e.g. return -1 if failed to read
                         // e.g. return -2 if read not complete
         }
+        __attribute__((fallthrough));
     case WAIT_TYPE:
         if (_cached_read(fd, &((&_packet)->type), sizeof(TYPE_PACKET_TYPE)) == sizeof(TYPE_PACKET_TYPE))
         {
@@ -137,6 +139,7 @@ int parse_packet(int fd, FieldHandler handler)
         } else {
             return -1;
         }
+        __attribute__((fallthrough));
     case WAIT_COUNT:
         if (_cached_read(fd, &((&_packet)->field_count), sizeof(TYPE_PACKET_FIELD_COUNT)) == sizeof(TYPE_PACKET_FIELD_COUNT))
         {
@@ -144,6 +147,7 @@ int parse_packet(int fd, FieldHandler handler)
         } else {
             return -1;
         }
+        __attribute__((fallthrough));
     case WAIT_FIELD_TYPE:
         _field = (Field *)malloc(sizeof(Field));
         if (_cached_read(fd, &(_field->type), sizeof(TYPE_FIELD_TYPE)) == sizeof(TYPE_FIELD_TYPE))
@@ -159,11 +163,10 @@ int parse_packet(int fd, FieldHandler handler)
         } else {
             return -1;
         }
+        __attribute__((fallthrough));
     case WAIT_FIELD_DATA:
         if (_cached_read(fd, _field->data, get_field_size(_field->type) == get_field_size(_field->type)))
         {
-            fprintf(stderr, "Field_size %u, Field data: %d %d %d\n", get_field_size(_field->type), (_field->data[0]), (_field->data[1]), (_field->data[2]));
-            fflush(stderr);
             _state = WAIT_EOP;
             handler((&_packet)->id, _field);
             free(_field->data);
@@ -179,6 +182,7 @@ int parse_packet(int fd, FieldHandler handler)
         } else {
             return -1;
         }
+        __attribute__((fallthrough));
     case WAIT_EOP:
         if (_cached_read(fd, &((&_packet)->eop), sizeof(TYPE_PACKET_EOP)) == sizeof(TYPE_PACKET_EOP) && (&_packet)->eop == EOP)
         {
@@ -187,6 +191,7 @@ int parse_packet(int fd, FieldHandler handler)
         } else {
             return -1;
         }
+        __attribute__((fallthrough));
     case COMPLETE:
         // reset states
         _state = WAIT_SOP;
