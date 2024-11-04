@@ -34,6 +34,7 @@ tests:
 	$(CC) $(CFLAGS) -o $(BIN_DIR)/packet_parser packet_parser.c $(INC)
 	$(CC) $(CFLAGS) -o $(BIN_DIR)/serial_test serial_test.c $(INC)
 	$(CC) $(CFLAGS) -o $(BIN_DIR)/serial_loop_test2 serial_loop_test2.c $(INC)
+	$(CC) $(CFLAGS) -o $(BIN_DIR)/TTL_test TTL_test.c $(INC)
 
 $(BIN_DIR)/$(TARGET): $(SRC) $(HEADERS)
 	@mkdir -p $(BIN_DIR)

@@ -32,7 +32,8 @@ Field *create_field(uint8_t type, uint8_t *data)
     if (field == NULL)
     {
         // Handle memory allocation failure
-        fprintf(stderr, "Failed to allocate memory for field\n");
+        perror("Failed to allocate memory for field\n");
+        //fprintf(stderr, "Failed to allocate memory for field\n");
         // exit(EXIT_FAILURE);
     }
     field->type = type;
@@ -173,6 +174,7 @@ int parse_packet(int fd, FieldHandler handler)
             _field->data = (uint8_t *)malloc(get_field_size(_field->type));
             if (_field->data == NULL)
             {
+                perror("Failed to allocate memory for field data");
                 fprintf(stderr, "Failed to allocate memory for field data\n");
                 return -2;
             }
@@ -191,6 +193,7 @@ int parse_packet(int fd, FieldHandler handler)
                 // failed to handle the field
                 free(_field->data);
                 free(_field);
+                fprintf(stderr, "Failed to handle the field\n");
                 return -2;
             }
             free(_field->data);
@@ -216,7 +219,7 @@ int parse_packet(int fd, FieldHandler handler)
             _state = COMPLETE;
             return(total_read_len == 0 ? read_len : total_read_len);
         } else {
-            fprintf(stderr, "Failed to read EOP, read: %02X\n", (&_packet)->eop);
+            //fprintf(stderr, "Failed to read EOP, read: %02X\n", (&_packet)->eop);
             return(total_read_len == 0 ? read_len : total_read_len);
         }
         __attribute__((fallthrough));
@@ -311,12 +314,34 @@ void print_packet(Packet *packet)
     printf("Field count: %d\n", packet->field_count);
     for (int i = 0; i < packet->field_count; i++)
     {
-        printf("Field %d Type: %d\n", i, packet->fields[i]->type);
+        printf("Field %d Type: %02X\n", i, packet->fields[i]->type);
         printf("Field %d Data: ", i);
         for (int j = 0; j < get_field_size(packet->fields[i]->type); j++)
         {
             printf("%02X", packet->fields[i]->data[j]);
         }
         printf("%c", EOP);
+    }
+}
+
+void print_packet_to_file(Packet *packet, FILE *file)
+{
+    if (packet == NULL)
+    {
+        fprintf(stderr, "Invalid packet\n");
+        return;
+    }
+    fprintf(file, "Packet ID: %d\n", packet->id);
+    fprintf(file, "Packet Type: %d\n", packet->type);
+    fprintf(file, "Field count: %d\n", packet->field_count);
+    for (int i = 0; i < packet->field_count; i++)
+    {
+        fprintf(file, "Field %d Type: %02X\n", i, packet->fields[i]->type);
+        fprintf(file, "Field %d Data: ", i);
+        for (int j = 0; j < get_field_size(packet->fields[i]->type); j++)
+        {
+            fprintf(file, "%02X", packet->fields[i]->data[j]);
+        }
+        fprintf(file, "%c", EOP);
     }
 }

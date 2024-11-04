@@ -26,6 +26,8 @@ void write_packet(Packet *packet, int fd);
 
 void print_packet(Packet *packet);
 
+void print_packet_to_file(Packet *packet, FILE *file);
+
 enum _States {
     WAIT_SOP,
     WAIT_ID,

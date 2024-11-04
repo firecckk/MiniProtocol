@@ -9,6 +9,10 @@ int get_field_size(uint8_t type) {
             return FIELD_SIZE_HELLO;
         case FIELD_TYPE_DATA_1:
             return FIELD_SIZE_DATA_1;
+        case FIELD_TYPE_DATA_256:
+            return FIELD_SIZE_DATA_256;
+        case FIELD_TYPE_TTL_START_TIME:
+            return FIELD_SIZE_TTL_START_TIME;
         case FIELD_TYPE_GOODBYE:
             return FIELD_SIZE_GOODBYE;
         default:
